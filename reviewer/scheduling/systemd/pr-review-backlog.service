@@ -1,0 +1,38 @@
+# pr-review-backlog.service — Linux (systemd) analog of the launchd LaunchAgent.
+#
+# NOT used on macOS. Provided so the planned Linux extension is a drop-in: the
+# wrapper (../run-backlog.sh) is already portable and its notify_failure() uses
+# notify-send on Linux. Install as a USER unit and adjust the two paths to your
+# checkout:
+#
+#   cp pr-review-backlog.{service,timer} ~/.config/systemd/user/
+#   $EDITOR ~/.config/systemd/user/pr-review-backlog.service   # set WorkingDirectory
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now pr-review-backlog.timer
+#
+# There is exactly ONE path to set: WorkingDirectory. ExecStart is relative to
+# it. A wrong WorkingDirectory fails the unit loudly (visible in `systemctl
+# --user status`) instead of silently no-op'ing: a non-existent path fails
+# systemd's own chdir, and an existing-but-wrong one fails the ExecStartPre
+# check below — either way the run never silently does nothing.
+#
+# The wrapper sets PATH and sources .env itself, so the unit stays minimal.
+
+[Unit]
+Description=Staged PR-review backlog run (stages PENDING reviews; never submits)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# HOME is already set for --user units; set it explicitly for parity with the
+# launchd plist and so the wrapper's HOME guard is satisfied.
+Environment=HOME=%h
+# Production cap; set LIMIT=none for the full backlog (see ../run-backlog.sh).
+Environment=LIMIT=10
+# EDIT THIS ONE LINE to your checkout's absolute path. ExecStart is relative to
+# it; a wrong path fails the unit loudly (systemd chdir if missing, or the
+# ExecStartPre check if it isn't the project root) — never a silent no-op (F54).
+WorkingDirectory=%h/path/to/review_2
+ExecStartPre=/bin/sh -c 'test -x ./.venv/bin/review-backlog || { echo "review-backlog not found under WorkingDirectory $(pwd) — fix WorkingDirectory in the unit" >&2; exit 1; }'
+ExecStart=/bin/bash scheduling/run-backlog.sh

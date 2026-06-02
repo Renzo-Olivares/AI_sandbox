@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pr-review"
+version = "0.1.0"
+description = "Automated PR review backlog tool: an orchestrator that invokes the Antigravity (agy) review agent and stages event-less pending reviews for human approval."
+requires-python = ">=3.9"
+dependencies = [
+  "unidiff>=0.7.5",
+  "PyYAML>=6.0",
+  "python-dotenv>=1.0.0",
+  "typer>=0.9.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.0",
+  "ruff>=0.4.0",
+]
+
+# Single-PR CLI entry points (plan §4.4 / §2).
+[project.scripts]
+review-pr = "pr_review.cli:review_pr_entry"
+stage-review = "pr_review.cli:stage_review_entry"
+review-backlog = "pr_review.cli:review_backlog_entry"
+unstage-review = "pr_review.cli:unstage_review_entry"
+
+[tool.setuptools.packages.find]
+include = ["pr_review*"]
+
+# --- Code style: Google Python Style Guide with 2-space indentation -----------
+# (kickoff "Working style" / plan "Code style & implementation conventions").
+# black/ruff-format default to 4 spaces and cannot do 2; ruff honors
+# indent-width, so we use ruff for both lint and format.
+[tool.ruff]
+line-length = 80
+indent-width = 2
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "D"]
+ignore = [
+  "D203", # one-blank-line-before-class (conflicts with D211)
+  "D213", # multi-line-summary-second-line (conflicts with D212)
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D"] # tests don't require docstrings
+
+[tool.ruff.format]
+indent-style = "space"
+quote-style = "double"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

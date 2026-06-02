@@ -1,0 +1,40 @@
+# Production configuration for the automated PR-review tool (plan §9).
+#
+# THIS session tests against the fork by overriding the repo on the CLI:
+#   review-pr 1 --repo Renzo-Olivares/flutter --as=fresh
+# The production `repo` below stays flutter/flutter (kickoff); the fork is only
+# the test bed.
+
+repo: flutter/flutter
+username: Renzo-Olivares
+mode: auto-stage-review           # auto-stage-review | manual-stage-review (neither submits; both stage pending)
+
+default_branch: master            # flutter's default branch (confirmed, plan §11)
+labels_to_skip:
+  - "waiting for response"        # exact, case-sensitive, lowercase (plan §11)
+
+batch_size: 5                     # max subagents run concurrently per batch (plan §4.2)
+
+# --- Directories (RELATIVE paths resolve next to THIS config file; git-ignored) ---
+review_file_dir: pr-reviews-generated/pending       # where the agent writes each review (plan §2)
+report_dir: pr-reviews-generated/reports            # per-run Markdown report (plan §6.2)
+base_clone_dir: pr-reviews-generated/flutter-base   # single shared clone; worktrees branch off it (plan §4.3)
+worktree_dir: pr-reviews-generated/worktrees        # one worktree per PR (plan §4.3)
+
+# --- GitHub credentials: TWO explicit tokens, neither using ambient gh auth (plan §1 Layer 2) ---
+agent_github_token_env: GH_TOKEN_READONLY       # READ-ONLY token the agy agent sees; must not be able to write (verify empirically)
+orchestrator_github_token_env: GH_TOKEN_WRITE   # write token used ONLY by the orchestrator for event-less staging (Layer 3)
+
+# --- Agent execution safety (plan §1 Layer 1) ---
+use_skip_permissions: false       # MUST be false: --dangerously-skip-permissions voids the allowlist + sandbox (plan §1)
+# sandbox is ALWAYS on (not configurable): agy is launched with --sandbox and the project-local settings set enableTerminalSandbox=true (plan §1 Layer 1)
+agy_settings_path: ~/.gemini/antigravity-cli/settings.json  # permission allow/deny/ask lists (deny>ask>allow; plan §1)
+agy_command: agy                  # the review-agent command — the swappable seam (plan §4.5)
+agy_model:                        # pin the review model so quality is consistent, decoupled from your global agy selection. null = inherit global. e.g. "Claude Sonnet 4.6 (Thinking)" (thorough) or "Gemini 3.5 Flash (Medium)" (fast/cheap)
+agy_timeout_seconds: 1800         # per-invocation timeout; backstops a TTY/unanswerable-ask hang (plan §4.5, §10)
+
+# --- Style-guide conformance (plan §8 rubric) ---
+style_guide_enabled: true         # add a Flutter style-guide lens to each review; adds ~22K tokens/PR — set false to save quota
+style_guide_repo: flutter/flutter # TRUSTED source of the guide — NEVER a fork (a doctored guide would be prompt injection, plan §1)
+style_guide_ref: master           # fetch the guide from this ref each run, so the rubric tracks upstream as it evolves
+style_guide_path: docs/contributing/Style-guide-for-Flutter-repo.md  # repo-relative guide path; also flags a PR that edits the guide (flip-the-lens)

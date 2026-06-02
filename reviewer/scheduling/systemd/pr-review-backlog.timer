@@ -1,0 +1,23 @@
+# pr-review-backlog.timer — fires the service Mon-Fri at 06:00 (Linux/systemd).
+#
+# Persistent=true makes a run missed while the machine was off/asleep fire on
+# the next boot/wake — the systemd analog of launchd's fire-on-wake (plan §3).
+#
+# Install (as a user unit), then:
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now pr-review-backlog.timer
+#   systemctl --user list-timers pr-review-backlog.timer   # confirm next run
+#
+# A user timer only runs while the user has an active/lingering session; if it
+# must run without an interactive login:
+#   loginctl enable-linger "$USER"
+
+[Unit]
+Description=Run the staged PR-review backlog on weekday mornings
+
+[Timer]
+OnCalendar=Mon..Fri 06:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,41 @@
+# === Secrets / credentials — NEVER commit ===
+# Tokens are supplied via environment variables (see plan §9 / the kickoff's
+# "Environment, secrets & dependencies"). A local .env is for dev convenience only.
+.env
+.env.*
+!.env.example
+*.token
+*.pem
+*.key
+gh_token*
+secrets.json
+
+# === Python virtual environment (kept local to this directory, never global) ===
+.venv/
+venv/
+env/
+
+# === Python caches & build artifacts ===
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# === Tool-generated runtime data — regenerable; NEVER commit ===
+# Reviews, per-run reports, the (large) flutter base clone, per-PR worktrees,
+# and scheduler logs/locks. Path is configurable in config.yaml; this is the
+# default. Ignoring it also keeps git from tracking the nested flutter repo.
+pr-reviews-generated/
+
+# === OS / editor cruft ===
+.DS_Store
+*.swp
+.idea/
+.vscode/
